@@ -11,6 +11,7 @@
     
     $bd = new BBDD($_SESSION['host'], $_SESSION['user'], $_SESSION['pass'], $info); // Conectar con la BBDD...
     if ($bd->getInfo() === true){ // Conexión satisfactoria... 
+        /*
         $nameColumnBD = $bd->nombres_campos($tablaBD); // Nombre de las columnas de la tabla BD.
         $sql = "SELECT * FROM $tablaBD";
         $tuplas = $bd->getBBDD($sql);
@@ -19,9 +20,21 @@
         $view = new View();
         $html_thead = $view->tableHead($nameColumnBD ?? []);
         $html_tbody = $view->tableBody($tuplas);
-        
-        // Problema tbody -> array 
+        */
+        // Problema tbody -> array buscar en toda la tupla un valor
         // SELECT * FROM familia WHERE cod LIKE 'E%' OR nombre LIKE 'E%'
+        
+        $nameColumnBD = $bd->nameColumnTable($tablaBD); // Nombre de las columnas de la tabla BD.
+        $sql = "SELECT * FROM $tablaBD";
+        $tuplas = $bd->getBBDD($sql);
+        
+        $pk = $bd->getIdentifyTable();
+        
+        $view = new View();
+        $html_thead = $view->tableHead($nameColumnBD ?? []);
+        $html_tbody = $view->tableBody($tuplas, $pk);//body($tuplas, $pk);
+        
+        
     }
 ?>
 
@@ -37,7 +50,7 @@
             <h1>Gestionar registros de la tabla</h1>
             
             <fieldset>
-                <legend>Registros de la tabla <?=$tabla?></legend>
+                <legend>Registros de la tabla <?=$tablaBD?></legend>
                 
                 <table>
                     <?php 

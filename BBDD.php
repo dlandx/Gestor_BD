@@ -8,6 +8,7 @@ class BBDD {
     private $user ;
     private $pass;
     private $bd;
+    private $identify; // Array donde obtendremos los PK, FK... de la TABLA.
     
     public function __construct(string $h="172.17.0.2", string $u="root", string $p="root", string $bd=null) {
         $this->host = $h;
@@ -83,44 +84,53 @@ class BBDD {
         return $bd;            
     }
     
-    // Obtener datos de la Tabla BD
-    /**
-     * Función obtiene los nombres de las columnas de la BBDD...
-     * @param string $tabla, tabla de la BBDD a consultar...
-     * @return array, Retorna en un vector los nombres de las columnas BBDD...
-     */
-    public function nombres_campos(string $tabla): array {
-        $campos = [];
-        // Si se pierde la conexion, volvemos a conectar...
-        if ($this->con == null) {
+
+    //Función obtiene los nombres de las columnas de la BBDD...    
+    public function nameColumnTable($tabla) {
+        $campos = []; // Datos que contendra el nº de las columnas de la Tabla...
+        $cont = 0; // Contador para el While(...) -> Recorrer columnas...
+        $identify = []; // Identificadores de la Tabla -> PK, FK...
+                
+        if ($this->con == null) { // Si se pierde la conexion, volvemos a conectar...
             $this->con = $this->conexion();
         }
-        
-        // Preparar la consulta SQL...
-        $consulta = "SELECT * FROM $tabla";
-        $r = $this->con->query($consulta);
+                
+        $r = $this->con->query("SELECT * FROM $tabla"); // Preparar la consulta SQL...
+        // columnCount() -> Devuelve el número de columnas de un conjunto de resultados.
+        $columns = $r->columnCount(); // Nº de columnas que tendra la TABLA de la BBDD...
 
-        $columns = $r->columnCount(); // Devuelve el número de columnas de un conjunto de resultados
-        $cont = 0; $identificador = null;
+        // Bucle - obtendremos los nombres de las columnas de la TABLA BD...
         while ($cont < $columns) {
             // Array de objetos de cada columna [tipo=VAR_STRING, flags=(not null, PK), long, tabla...]
-            $meta = $r->getColumnMeta($cont); //Devuelve metadatos de una columna de un conjunto de resultados
-            //$campos[] = $meta['name']; // Obtenemos el nombre de las columnas BD..
-            //$cont++;    
+            $meta = $r->getColumnMeta($cont); //Devuelve metadatos de una columna de un conjunto de resultados            
+            $campos[] = $meta['name']; // Obtenemos del METADATO el nombre de la columnas TABLA...
             
-        // ADDD                
-// Obtener PK  // $meta['flags'][1]
-            $longFlags = count($meta['flags']); // Obtengo los flags -> PK, not null, multiple_key...
-            // Si el flags tiene 2 elementos en este array 
-            if($longFlags > 1 && $meta['flags'][1] === 'primary_key'){ // POS 1 = PK | unique_key | multiple_key
-                $identificador = $meta['name'];
-            } // Unique, FK...
-            $campos[][$identificador] = $meta['name']; // Obtenemos el nombre de las columnas BD..
-            $cont++;    
-        } // FIN ADD
-
-        var_dump($campos);
-        return $campos; //SHOW TABLES FROM BD...
+            // $this->identificadoresTabla($meta) -> obtener de los METADATOS solo los flags [PK, FK, Multi-PK]
+            // Obtener identificadores de la Tabla y nombre de la columna (array asociativo)...
+            $identify[] = $this->identificadoresTabla($meta); 
+            $cont++;      
+        }
+        
+        $this->identify = $identify; // Asignamos al atributo el resultado = los idenficadores obtenidos.
+        return $campos; // Retornamos el nombre de las columnas de la TABLA... 
+    }
+    
+    // Obtener identificadores de la Tabla colo la Primary Key, Unique Key, Multiple Key y que columna esta...
+    private function identificadoresTabla($meta) {
+        $identificador = [];
+        // flags -> Bandera establecida para esta columna [En ella estan PK, Not NULL, FK, blob...]
+        foreach ($meta['flags'] as $value) { // Recorrer solo los flags del METADATO...
+            // Si el flags (array de banderas) -> Contiene los tipos PK, FK o Multi-Key
+            if ($value === 'primary_key' || $value === 'unique_key' || $value === 'multiple_key'){
+                $identificador[$value] = $meta['name']; // Guardamos array[tipo flags] = Nombre columna; 
+            }
+        }
+        return $identificador;
+    }
+    
+    // Retornar los identificadores que tenga la TABLA como la PK, FK, Multi-Key...
+    public function getIdentifyTable() {
+        return $this->identify;
     }
     
     public function getTuplas($sql) {
