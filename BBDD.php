@@ -10,14 +10,37 @@ class BBDD {
     private $bd;
     private $identify; // Array donde obtendremos los PK, FK... de la TABLA.
     
-    public function __construct(string $h="172.17.0.2", string $u="root", string $p="root", string $bd=null) {
-        $this->host = $h;
-        $this->user = $u;
-        $this->pass = $p;
-        $this->bd = $bd;
-        $this->con = $this->conexion();
-        //echo $this->con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->error = ($this->con) ? true : false;
+    function __construct(array $conexion) {
+        // Obtenemos los datos de conexion [host, $user, $pass, $bd]
+        foreach ($conexion as $tipo => $datos) {
+            switch ($tipo) {
+                case 'host':
+                    $this->host = $datos;
+                    break;
+
+                case 'user':
+                    $this->user = $datos;
+                    break;
+                
+                case 'pass':
+                    $this->pass = $datos;
+                    break;
+                
+                case 'bd':
+                    $this->bd = $datos;
+                    break;
+                
+                default:
+                    break;
+            }
+//            ($tipo === 'host')? $this->host = $datos : break;
+//            ($tipo === 'user')? $this->user = $datos : $this->user = null;
+//            ($tipo === 'pass')? $this->pass = $datos : $this->pass = null;
+//            ($tipo === 'bd')? $this->bd = $datos : $this->bd = null;
+        }
+        
+        $this->con = $this->conexion(); // Establecemos la conexión con la BBDD...
+        $this->error = ($this->con) ? true : false; // Informacion de conexión... (OK | Error)
     }
     
     /**
@@ -30,9 +53,9 @@ class BBDD {
                 PDO::ATTR_ERRMODE => true, // True o false da igual si esta BIEN... 
                 PDO::ERRMODE_EXCEPTION => true]; // Errores para Excepciones (Solo para desarrollo)...
             
-            $con = new PDO($dsn, $this->user, $this->pass, $atributos);            
-            //$error = ($con) ? "conexión realizada satisfactoriamente" : "Ohhhh!!!! no se ha ha podido conectar";
+            $con = new PDO($dsn, $this->user, $this->pass, $atributos);
         } catch (PDOException $ex) {
+            $this->error = $ex->getMessage(); // Información de el Error...
             die ("Se produjo un error en la conexion: ".$ex->getMessage());
         } // try
         
@@ -50,9 +73,8 @@ class BBDD {
         return $this->error;
     }
 
-
-    // Obtener las BD del hosts
-    public function getBBDD($sql){
+    // Obtener los datos del la BBDD [Tablas, Tuplas]
+    public function getDatosBD($sql){
         $bd = [];
         // Si se pierde la conexion, volvemos a conectar...
         if ($this->con == null) {
@@ -61,30 +83,13 @@ class BBDD {
         
         // Preparar sentencia...
         $result = $this->con->query($sql);
+        // fetch() Obtiene la siguiente fila de un conjunto de resultados...
         while ($datos = $result->fetch(PDO::FETCH_NUM)) {
-            //$bd[] = $datos;
-            $bd[] = $datos;
+            $bd[] = $datos; // Almacenar los Datos obtenidos BBDD...
         }
         return $bd;
     }
     
-    // Obtener las Tablas de la BD seleccionada...
-    public function getTables($sql) {
-        $bd = [];
-        // Si se pierde la conexion, volvemos a conectar...
-        if ($this->con == null) {
-            $this->con = $this->conexion();
-        }
-        
-        // Preparar sentencia...
-        $result = $this->con->query($sql);
-        while ($datos = $result->fetch(PDO::FETCH_NUM)) {
-            $bd[] = $datos;
-        }
-        return $bd;            
-    }
-    
-
     //Función obtiene los nombres de las columnas de la BBDD...    
     public function nameColumnTable($tabla) {
         $campos = []; // Datos que contendra el nº de las columnas de la Tabla...
@@ -110,12 +115,12 @@ class BBDD {
             $identify[] = $this->identificadoresTabla($meta); 
             $cont++;      
         }
-        
+
         $this->identify = $identify; // Asignamos al atributo el resultado = los idenficadores obtenidos.
         return $campos; // Retornamos el nombre de las columnas de la TABLA... 
     }
     
-    // Obtener identificadores de la Tabla colo la Primary Key, Unique Key, Multiple Key y que columna esta...
+    // Obtener identificadores de la Tabla solo la Primary Key, Unique Key, Multiple Key y que columna esta...
     private function identificadoresTabla($meta) {
         $identificador = [];
         // flags -> Bandera establecida para esta columna [En ella estan PK, Not NULL, FK, blob...]
@@ -133,22 +138,91 @@ class BBDD {
         return $this->identify;
     }
     
-    public function getTuplas($sql) {
-        $campos = [];
+    // Realizar parte del CRUD -> UPDATE una fila modificada mediante FORM...
+    public function update($tabla, $campos, $identify, $datos) {
+        $cont = 0;
+        $set = "SET ";
+        $where = "WHERE ";
         // Si se pierde la conexion, volvemos a conectar...
         if ($this->con == null) {
             $this->con = $this->conexion();
         }
         
-        $r = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
+        // Identificadores que tenga la TABLA [PK, FK, Multi-KEY] -> para la CONDICION = WHERE (...)
+        foreach ($identify as $pos => $column) { 
+            $column = array_unique($column); // No repetir valores [PK y Multi-KEY en la misma columna]
+            foreach ($column as $name) { // Obtenemos el nombre del identificador
+                $where .= " $name=:$name AND "; // Obtener key...
+            }            
+        }        
+        // Campos a actualizar sentencia SET (...)
+        foreach ($datos as $key => $value) {
+            $set .= "$campos[$cont]=$key, ";            
+            $cont++;
+        }
         
-        /*
-        $consulta = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
-        $consulta->execute(array(":nom"=>$tienda)); // Ejecuta una sentencia SQL y devuelve el nº de filas afectadas
-        while ($fila = $consulta->fetch()){
-            echo "Visualizo el producto $fila[0]<br/>";
-        }*/
-        
-        return $datos;
+        // Eliminamos los CARACTERES sobrantes (, ) para realizar la SENTENCIA...
+        $sql = "UPDATE $tabla ".substr($set, 0, strlen($set) - 2)." ".substr($where, 0, strlen($where) - 4);
+        $stmt = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
+        return $stmt->execute($datos); // Ejecuta una sentencia preparada (Retorna True | False)
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public function eliminar($tabla, $identify, $datos){
+        // Si se pierde la conexion, volvemos a conectar...
+        if ($this->con == null) {
+            $this->con = $this->conexion();
+        }
+
+        // Crear sentencia parametrizada...
+        $sql = "DELETE FROM $tabla WHERE ";
+        foreach ($identify as $pos => $column) { // Identificadores que tenga la TABLA [PK, FK, Multi-KEY]
+            $column = array_unique($column); // No repetir valores [PK y Multi-KEY en la misma columna]
+            foreach ($column as $key => $columna) { // Obtenemos el nombre del identificador
+                $sql .= "$columna='$datos[$pos]' AND ";
+            }
+        }
+        //quitamos el último and, para que la sentencia quede correcta
+        $sql = substr($sql, 0, strlen($sql) - 4);
+
+        $r = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
+        $r->execute($datos); // NO PARAMETRIZADO
+        
+        $res = $r->rowCount();//Devuelve el número de filas afectadas por la última sentencia SQL
+        var_dump($res);
+    }
+    
+    public function getRowEdit($tabla, $identify, $datos) {
+        $tupla = [];
+        // Si se pierde la conexion, volvemos a conectar...
+        if ($this->con == null) {
+            $this->con = $this->conexion();
+        }
+        
+        $sql = "SELECT * FROM $tabla WHERE ";
+        foreach ($identify as $pos => $column) { // Identificadores que tenga la TABLA [PK, FK, Multi-KEY]
+            $column = array_unique($column); // No repetir valores [PK y Multi-KEY en la misma columna]
+            foreach ($column as $key => $columna) { // Obtenemos el nombre del identificador
+                $sql .= "$columna='$datos[$pos]' AND ";
+            }
+        }
+        //quitamos el último and, para que la sentencia quede correcta
+        $sql = substr($sql, 0, strlen($sql) - 4);
+        
+        $r = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
+        $r->execute($datos); // NO PARAMETRIZADO
+        while ($fila = $r->fetch(PDO::FETCH_NUM)){
+            $tupla = $fila;
+        }
+        return $tupla;
+    }
+    
+    
 }

@@ -4,37 +4,50 @@
         require "$clase.php";
     });
     
-    session_start(); // Crear sesion... 
-    $info = $_SESSION['bd']; // BD seleccionada
+    session_start(); // Crear o Abrir sesión...
+    $info = $_SESSION['conexion']['bd']; // BD seleccionada
+    // Si no existe la SESSION creo para TABLA seleccionada...
+    if(!isset($_SESSION['tabla'])){
+        $_SESSION['tabla'] = filter_input(INPUT_POST, 'tablas_bd'); // Obtener la TABLA seleccionada
+    }
     
-    $tablaBD = filter_input(INPUT_POST, 'tablas_bd');
-    
-    $bd = new BBDD($_SESSION['host'], $_SESSION['user'], $_SESSION['pass'], $info); // Conectar con la BBDD...
-    if ($bd->getInfo() === true){ // Conexión satisfactoria... 
-        /*
-        $nameColumnBD = $bd->nombres_campos($tablaBD); // Nombre de las columnas de la tabla BD.
-        $sql = "SELECT * FROM $tablaBD";
-        $tuplas = $bd->getBBDD($sql);
-        //var_dump($tuplas);
+    // Instanciar clase BBDD.php -> contendra la Conexión con la BBDD...
+    $bd = new BBDD($_SESSION['conexion']);
+    if ($bd->getInfo() === true){ // Conexión satisfactoria...
+        $nameColumnBD = $bd->nameColumnTable($_SESSION['tabla']); // Nombre de las columnas de la TABLA BD...
+        $tuplas = $bd->getDatosBD("SELECT * FROM {$_SESSION['tabla']}"); // Obtener los datos de la TABLA BD...
+        $identiyPK = $bd->getIdentifyTable(); // Obtener identificadores que tenga la TABLA como la PK, FK, Multi-Key...
         
+        // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
         $view = new View();
-        $html_thead = $view->tableHead($nameColumnBD ?? []);
-        $html_tbody = $view->tableBody($tuplas);
-        */
-        // Problema tbody -> array buscar en toda la tupla un valor
-        // SELECT * FROM familia WHERE cod LIKE 'E%' OR nombre LIKE 'E%'
+        $html_thead = $view->tableHead($nameColumnBD); // Tabla head (Titulo)
+        $html_tbody = $view->tableBody($nameColumnBD, $tuplas); // Tabla body (Contenido)
+    }
         
-        $nameColumnBD = $bd->nameColumnTable($tablaBD); // Nombre de las columnas de la tabla BD.
-        $sql = "SELECT * FROM $tablaBD";
-        $tuplas = $bd->getBBDD($sql);
+    // Acciones al pulsar un BTN...
+    switch (filter_input(INPUT_POST, 'btn')) {
+        case "Editar":
+            $datoTupla = filter_input(INPUT_POST, 'celda', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+            $datos = serialize($datoTupla); // CONTROLAR ESCAPE CHART...
+            header("Location: editar.php?key=$datos");
+            break;
         
-        $pk = $bd->getIdentifyTable();
+        case "Eliminar":
+            break;
         
-        $view = new View();
-        $html_thead = $view->tableHead($nameColumnBD ?? []);
-        $html_tbody = $view->tableBody($tuplas, $pk);//body($tuplas, $pk);
+        case "Insertar":
+
+            break;
         
+        case "Volver":
+            // Elinamos la sesión que almacenaba la TABLA seleccionada de la BD...
+            unset($_SESSION['tabla']); // Para seleccionar otra...
+            header("Location: tablas.php");
+            exit();
+            break;
         
+        default:
+            break;
     }
 ?>
 
@@ -50,17 +63,17 @@
             <h1>Gestionar registros de la tabla</h1>
             
             <fieldset>
-                <legend>Registros de la tabla <?=$tablaBD?></legend>
+                <legend>Registros de la tabla <?=$_SESSION['tabla']?></legend>
                 
-                <table>
-                    <?php 
-                        echo $html_thead;
-                        echo $html_tbody ?? null;
-                    ?>
-                </table>
-                
-                <form action="index.php" method="POST">
-                    <input type="submit" id="success" value="Volver">
+                <form action="gestionarTabla.php" method="POST">
+                    <table>
+                        <?php 
+                            echo $html_thead;
+                            echo $html_tbody ?? null;
+                        ?>
+                    </table>
+                    <input type="submit" id="success" value="Insertar" name="btn">
+                    <input type="submit" id="success" value="Volver" name="btn">
                 </form>                
             </fieldset>
         </div>

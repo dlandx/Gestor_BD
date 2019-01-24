@@ -4,13 +4,15 @@
         require "$clase.php";
     });
     
-    session_start(); // Crear sesion... 
-    $info = $_SESSION['bd']; // BD seleccionada
+    session_start(); // Crear o Abrir sesión... 
+    $info = $_SESSION['conexion']['bd']; // BD seleccionada
 
-    $bd = new BBDD($_SESSION['host'], $_SESSION['user'], $_SESSION['pass'], $info); // Conectar con la BBDD...
+    // Instanciar clase BBDD.php -> contendra la Conexión con la BBDD...
+    $bd = new BBDD($_SESSION['conexion']);
     if ($bd->getInfo() === true){ // Conexión satisfactoria... 
-        $tablasBD = $bd->getTables("SHOW TABLES");
+        $tablasBD = $bd->getDatosBD("SHOW TABLES"); // Obtener las TABLAS de la BD elegida...
         
+        // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
         $view = new View();
         $html_btn = $view->viewTables($tablasBD);
     }
@@ -31,7 +33,7 @@
                 <legend>Listado de Bases de Datos</legend>
                 
                 <form action="index.php" method="POST">
-                    <input type="submit" id="success" value="Volver">
+                    <input type="submit" id="success" value="Volver" name="btn">
                 </form>                
             </fieldset>
             
