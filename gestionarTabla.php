@@ -22,17 +22,47 @@
         $view = new View();
         $html_thead = $view->tableHead($nameColumnBD); // Tabla head (Titulo)
         $html_tbody = $view->tableBody($nameColumnBD, $tuplas); // Tabla body (Contenido)
-    }
         
+        // Acciones al pulsar un BTN...
+        switch (filter_input(INPUT_POST, 'btn')) {
+            case "Editar":
+                $datoTupla = filter_input(INPUT_POST, 'celda', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+                $datos = serialize($datoTupla); // CONTROLAR ESCAPE CHART QUE VIENE del input...
+                header("Location: editar.php?key=$datos");
+                break;
+
+            case "Eliminar":
+                $datos = filter_input(INPUT_POST, 'celda', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+                $result = $bd->delete($_SESSION['tabla'], $datos); // Controlar que RECARGE LA PAGINA
+                ($result === true) ? "Location: gestionarTabla.php" : $info = "Se produjo un error";
+                break;
+
+            case "Insertar":
+                header("Location: editar.php?key={$_SESSION['tabla']}");
+                break;
+
+            case "Volver":
+                // Elinamos la sesión que almacenaba la TABLA seleccionada de la BD...
+                unset($_SESSION['tabla']); // Para seleccionar otra...
+                header("Location: tablas.php");
+                exit();
+                break;
+
+            default:
+                break;
+        }
+    }
+/*        
     // Acciones al pulsar un BTN...
     switch (filter_input(INPUT_POST, 'btn')) {
         case "Editar":
             $datoTupla = filter_input(INPUT_POST, 'celda', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
-            $datos = serialize($datoTupla); // CONTROLAR ESCAPE CHART...
+            $datos = serialize($datoTupla); // CONTROLAR ESCAPE CHART QUE VIENE del input...
             header("Location: editar.php?key=$datos");
             break;
         
         case "Eliminar":
+            
             break;
         
         case "Insertar":
@@ -48,7 +78,7 @@
         
         default:
             break;
-    }
+    }*/
 ?>
 
 <!doctype html>

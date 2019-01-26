@@ -167,9 +167,48 @@ class BBDD {
         return $stmt->execute($datos); // Ejecuta una sentencia preparada (Retorna True | False)
     }
     
+    // Realizar parte del CRUD -> DELETE una fila modificada mediante FORM...
+    public function delete($tabla, $datos) {
+        // Si se pierde la conexion, volvemos a conectar...
+        if ($this->con == null) {
+            $this->con = $this->conexion();
+        }
+
+        // Crear sentencia parametrizada...
+        $sql = "DELETE FROM $tabla WHERE ";
+        foreach ($datos as $campo => $dato) {
+            $columna = substr($campo,1); // Quitar : = KEY del array asociativo...
+            $sql .= "$columna=$campo AND ";
+        }
+        
+        //quitamos el último and, para que la sentencia quede correcta
+        $sql = substr($sql, 0, strlen($sql) - 4);
+        $stmt = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
+        return $stmt->execute($datos); // Ejecuta una sentencia preparada (Retorna True | False)
+    }
     
-    
-    
+    public function insert($tabla, $datos) {
+        $column = "(";
+        $valor = "VALUES (";
+        
+        // Si se pierde la conexion, volvemos a conectar...
+        if ($this->con == null) {
+            $this->con = $this->conexion();
+        }
+
+        // Crear sentencia parametrizada...
+        foreach ($datos as $campo => $dato) {
+            $columna = substr($campo,1); // Quitar : = KEY del array asociativo...
+            $column .= "$columna, "; //"$columna=$campo AND ";
+            $valor .= "$campo, ";
+        }
+        
+        // Sentencia SQL -> quitando las ultimas comas [Nombre columnas y VALUES...]
+        $sql = "INSERT INTO $tabla ".substr($column, 0, strlen($column) - 2).") ".substr($valor, 0, strlen($valor) - 2).");";
+        $stmt = $this->con->prepare($sql); // Preparar una sentencia SQL parametrizada...
+        return $stmt->execute($datos); // Ejecuta una sentencia preparada (Retorna True | False)
+        // Mostrat un mensaje en caso de error...
+    }
     
     
     
