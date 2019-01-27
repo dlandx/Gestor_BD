@@ -6,7 +6,7 @@
 
     session_start(); // Crear o Abrir sesión... 
     $viewTables = false; // Ver el contenido de las tablas...  
-    $info = "";
+    $info = "Ingresar los datos del host";
     
     // Acciones al pulsar un BTN...
     switch (filter_input(INPUT_POST, 'btn')) {
@@ -21,13 +21,19 @@
             if ($bd->getInfo() === true){ // Conexión satisfactoria... 
                 $viewTables = true; // Ver las BBDD del host en HTML - CHECKBOX...
                 $tablasBD = $bd->getDatosBD("SHOW DATABASES"); // Obtener las BBDD del host
-                
+                $bd->close(); // Cerrar conexión BBDD...
                 // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
                 $view = new View();
-                $html_checkBD = $view->viewBD($tablasBD); // Obtener las BBDD del HOST
-            }
+                $html_checkBD = $view->viewBD($tablasBD, $checked ?? ""); // Obtener las BBDD del HOST
+            }            
             break;
 
+        case "Vaciar":
+            session_destroy();
+            header("Location: index.php");
+            exit();
+            break;
+            
         case "Gestionar":
             // Obtenemos la BBDD seleccionada...
             $_SESSION['conexion']['bd'] =  filter_input(INPUT_POST, 'bd_host');
@@ -39,24 +45,25 @@
             if ($bd->getInfo() === true){ // Conexión satisfactoria... 
                 $viewTables = true; // Ver las BBDD del host en HTML - CHECKBOX...
                 $tablasBD = $bd->getDatosBD("SHOW DATABASES"); // Obtener las BBDD del host
-                
+                $bd->close(); // Cerrar conexión BBDD...
                 // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
                 $view = new View();
-                $html_checkBD = $view->viewBD($tablasBD); // Obtener las BBDD del HOST
+                $html_checkBD = $view->viewBD($tablasBD, $checked ?? ""); // Obtener las BBDD del HOST
             }
             break;
         
         case "Volver":
             // Pulsar el BTN Volver - clase tablas.php -> Mostramos las BBDD para seleccionar otra...
+            unset($_SESSION['tabla']); // Eliminamos tabla...
             // Instanciar clase BBDD.php -> contendra la Conexión con la BBDD...
             $bd = new BBDD($_SESSION['conexion']);
             if ($bd->getInfo() === true){ // Conexión satisfactoria... 
                 $viewTables = true; // Ver las BBDD del host en HTML - CHECKBOX...
                 $tablasBD = $bd->getDatosBD("SHOW DATABASES"); // Obtener las BBDD del host
-                
+                $bd->close(); // Cerrar conexión BBDD...
                 // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
                 $view = new View();
-                $html_checkBD = $view->viewBD($tablasBD); // Obtener las BBDD del HOST
+                $html_checkBD = $view->viewBD($tablasBD, $_SESSION['conexion']['bd']); // Obtener las BBDD del HOST
             }
             break;
             
@@ -70,46 +77,54 @@
     <head>
         <meta charset="UTF-8">
         <title>Bases de Datos del Host</title>
+        <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
-        <div>
-            <span><?=$info?></span>
+        <div class="info">
             <h1>Gestor de Base de Datos</h1>
-            
-            <fieldset>
-                <legend>Datos de conexión</legend>
+            <hr>
+            <h4><?=$info?></h4>
+        </div>
+        
+        <div class="content">        
+            <form action="index.php" method="POST">
+                <h2>Datos de conexión</h2>
                 
-                <form action="index.php" method="POST">
+                <div class="inputs">
                     <div class="filds">
                         <input type="text" placeholder="Ingresar nombre del host" name="host" value="<?=$_SESSION['conexion']['host'] ?? null?>">
                         <label for="">Nombre del Host</label>
                     </div>
-                    
+
                     <div class="filds">
                         <input type="text" placeholder="Ingresar nombre de usuario" name="user" value="<?=$_SESSION['conexion']['user'] ?? null?>">
                         <label for="">Nombre de usuario</label>
                     </div>
-                    
+
                     <div class="filds">
                         <input type="password" placeholder="Ingresar contraseña" name="pass" value="<?=$_SESSION['conexion']['pass'] ?? null?>">
                         <label for="">Password</label>
                     </div>
-                    
-                    <input type="submit" id="success" value="Conectar" name="btn">
-                </form>                
-            </fieldset>
+                </div>
+                
+                <div class="btn">
+                    <input type="submit" class="success" value="Conectar" name="btn">
+                    <input type="submit" class="danger" value="Vaciar" name="btn">
+                </div>
+            </form>
         </div>
         
         <?php if ($viewTables):?>
-            <div>
-                <fieldset>
-                   <legend>Base de datos del Host [<?=$_SESSION['conexion']['host']?>]</legend>
+            <div class="content">
+                <h2>Bases de datos del Host [<b><?=$_SESSION['conexion']['host']?></b>]</h2>
 
-                   <form action="index.php" method="POST">
-                       <?=$html_checkBD?>
-                       <input type="submit" id="success" value="Gestionar" name="btn">
-                   </form>                
-               </fieldset>
+                <form action="index.php" method="POST">
+                    <div class="btn">
+                        <?=$html_checkBD?>
+                    </div>
+  
+                    <input type="submit" class="primary" value="Gestionar" name="btn">
+                </form>
             </div>
         <?php endif; ?>
     </body>

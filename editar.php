@@ -1,22 +1,19 @@
 <?php
-// Cargamos los fichero '.php' que se van a utilizar...
+    // Cargamos los fichero '.php' que se van a utilizar...
     spl_autoload_register(function ($clase) {
         require "$clase.php";
     });
     session_start(); // Crear o Abrir sesión...
-    $info = "";
+    $info = "Base de Datos - {$_SESSION['conexion']['bd']} (Host - {$_SESSION['conexion']['host']})";
+
     // Unserialize(...) -> Restaurar los valores originales del array serializado = Obtenemos los datos
-    //$datos = unserialize($_GET['key']); // Obtenemos ARRAY enviado por GET gestionarTabla.php (BTN - Editar)...
-    
-    $tipo = unserialize($_GET['key']); // Obtenemos ARRAY enviado por GET gestionarTabla.php (BTN - Editar)...
+    $tipo = unserialize(filter_input(INPUT_GET, 'key')); // Obtenemos ARRAY enviado por GET gestionarTabla.php (BTN - Editar)...
     // unserialize(...) -> Return TRUE si los datos son serializados, FALSE si no esta serializado...
-    if($tipo === false ){ // Dato nombre TABLA
-        echo "TABLA";
+    if($tipo === false ){ // Dato nombre TABLA -> INSERTAR
         $datos = $tipo;
         $isSerialize = false;
         $btn = "Insertar";
-    } else { // Dato serializado ARRAY
-        echo "SERIALIZE";
+    } else { // Dato serializado ARRAY -> EDITAR
         $datos = $tipo;
         $isSerialize = true;
         $btn = "Actualizar";
@@ -27,10 +24,11 @@
     if ($bd->getInfo() === true){ // Conexión satisfactoria...
         $nameColumnBD = $bd->nameColumnTable($_SESSION['tabla']); // Nombre de las columnas de la TABLA BD...
         $identiyPK = $bd->getIdentifyTable(); // Obtener identificadores de la TABLA como la PK, FK, Multi-Key...
+        $bd->close(); // Cerrar conexión BBDD...
 
         // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
         $view = new View();
-        //$html_form = $view->editTableForm($nameColumnBD, $identiyPK, $datos);
+        // Si venimos del BTN Editar -> editamos datos. BTN Insertar -> Insertar datos...
         $html_form = ($isSerialize)? $view->editTableForm($nameColumnBD, $identiyPK, $datos) : $view->insertTableForm($nameColumnBD, $identiyPK, $datos);
 
         // Acciones al pulsar un BTN...
@@ -40,7 +38,8 @@
                 $datos = filter_input(INPUT_POST, 'new', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
                 // Realizamos parte del CRUD -> UPDATE
                 $result = $bd->update($_SESSION['tabla'], $nameColumnBD, $identiyPK, $datos);
-                ($result === true) ? "Location: gestionarTabla.php" : $info = "Se produjo un error";
+                $info = ($result === true) ? header("Location: gestionarTabla.php") : $bd->getInfo();
+                $bd->close(); // Cerrar conexión BBDD...
                 break;
 
             case "Cancelar":
@@ -53,16 +52,14 @@
                 $datos = filter_input(INPUT_POST, 'new', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
                 // Realizamos parte del CRUD -> INSERT
                 $result = $bd->insert($_SESSION['tabla'], $datos);
-                ($result === true) ? "Location: gestionarTabla.php" : $info = "Se produjo un error";
+                $info = ($result === true) ? header("Location: gestionarTabla.php") : $bd->getInfo();
+                $bd->close(); // Cerrar conexión BBDD...
                 break;
             
             default:
                 break;
-        }
-        
-        // CONTROLAR AL PULSAR BTN recarga pagina y LINE 9 sin datos...
+        } // Switch - BTN
     }
-    
 ?>
 
 <!doctype html>
@@ -70,22 +67,31 @@
     <head>
         <meta charset="UTF-8">
         <title>Editar datos Tabla</title>
+        <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
+        <div class="info">
+            <h1>Ingrese los datos para realizar la operación en la tabla <b><?=$_SESSION['tabla']?></b></h1>
+            <hr>
+            <h4><?=$info?></h4>
+        </div>
+        
         <div class="content">
-            <h1>Ingrese los nuevos datos para editar el producto</h1>
+            <h2>Datos a ingresar</h2>
+            <p>Campo resaltado es un identificador de la tabla [PK, FK, Multi-Key]</p>
             
-            <fieldset>
-                <legend>Modificar Producto</legend>
-                
-                <span>Si el campo no se puede editar es un identificador de la tabla [PK, FK]</span>
-                <form action="editar.php" method="POST">
+            <form action="" method="POST">
+                <div class="inputs">
                     <?=$html_form?>
-                    <!-- BTN -->
-                    <input type="submit" id="success" value="<?=$btn?>" name="btn">
-                    <input type="submit" id="success" value="Cancelar" name="btn">
-                </form>
-            </fieldset>
+                </div>
+                
+                <!-- BTN -->
+                <div class="btn">
+                    <input type="submit" class="success" value="<?=$btn?>" name="btn">
+                    <input type="submit" class="danger" value="Cancelar" name="btn">
+                </div>
+            </form>
+
         </div>
     </body>
 </html>

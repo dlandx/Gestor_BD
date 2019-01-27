@@ -5,13 +5,13 @@
     });
     
     session_start(); // Crear o Abrir sesión... 
-    $info = $_SESSION['conexion']['bd']; // BD seleccionada
+    $info = "Base de Datos - {$_SESSION['conexion']['bd']} (Host - {$_SESSION['conexion']['host']})"; // BD seleccionada
 
     // Instanciar clase BBDD.php -> contendra la Conexión con la BBDD...
     $bd = new BBDD($_SESSION['conexion']);
     if ($bd->getInfo() === true){ // Conexión satisfactoria... 
         $tablasBD = $bd->getDatosBD("SHOW TABLES"); // Obtener las TABLAS de la BD elegida...
-        
+        $bd->close(); // Cerrar conexión BBDD...
         // Instanciar clase View.php -> Presentación de datos del modelo (HTML)
         $view = new View();
         $html_btn = $view->viewTables($tablasBD);
@@ -23,27 +23,30 @@
     <head>
         <meta charset="UTF-8">
         <title>Tablas de la Base de Datos</title>
+        <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
-        <div>
-            <span><?=$info?></span>
+        <div class="info">
             <h1>Gestionar tablas de la Base de Datos</h1>
-            
-            <fieldset>
-                <legend>Listado de Bases de Datos</legend>
-                
-                <form action="index.php" method="POST">
-                    <input type="submit" id="success" value="Volver" name="btn">
-                </form>                
-            </fieldset>
-            
-            <fieldset>
-                <legend>Tablas de la Base de Datos</legend>
-                
-                <form action="gestionarTabla.php" method="POST">
-                    <?=$html_btn?>
-                </form>                
-            </fieldset>
+            <hr>
+            <h4><?=$info?></h4>
         </div>
+           
+        <div class="volver">
+            <h3>Volver a listar las BBDD - <b><?=$_SESSION['conexion']['host']?></b></h3>
+            <form action="index.php" method="POST">
+                <input type="submit" class="danger" value="Volver" name="btn">
+            </form>                
+        </div>
+          
+        <div class="content">
+            <h2>Tablas de la Base de Datos</h2>
+            <p>Si por algún casual se corta el contenido (Descomentar en CSS: div - class="content" - position: absolute;)</p>
+            <form action="gestionarTabla.php" method="POST">
+                <div class="tablasBD">
+                    <?=$html_btn?>
+                </div>
+            </form> 
+        </div> 
     </body>
 </html>

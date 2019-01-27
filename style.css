@@ -1,0 +1,230 @@
+body {
+    width: 70%;
+    height: 100%;
+    margin: 0 auto;
+    text-align: center;
+    background: -webkit-linear-gradient(135deg,#f4f5fb 0,#ced1e4 100%);
+}
+h1 {
+    color: #3a6586;
+    text-transform: uppercase;
+}
+h4, h3, b {
+    color: #bf5864;
+}
+h2 {
+    color: #419859;
+    text-transform: uppercase;
+    text-decoration: underline;
+}
+p {
+    color: gray;
+}
+.info {
+    border-radius: 10px;
+    background: #fbfbfd;
+    padding: .1em;
+    margin: 2em 0;
+    padding-bottom: 1em;
+    -webkit-box-shadow: 0 10px 6px -6px #777;
+    -moz-box-shadow: 0 10px 6px -6px #777;
+    box-shadow: 0 10px 6px -6px #777;
+}
+.content{
+    border-radius: 10px;
+    padding-top: 1em;
+    margin: 3em 0;
+    background: #fbfbfd;
+    overflow: hidden;
+    -webkit-box-shadow: 0 10px 6px -6px #777;
+    -moz-box-shadow: 0 10px 6px -6px #777;
+    box-shadow: 0 10px 6px -6px #777;
+    /*position: absolute */
+}
+
+.volver {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #fbfbfd;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.tablasBD {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    grid-gap: 2em;
+    padding: 2em;
+}
+.tablasBD > .bd{
+    border: 1px solid #3a6586;
+    border-radius: 10px;
+    color: #3a6586;
+}
+
+/* Form */
+.inputs{
+    margin: 0 3em;
+    overflow: hidden;
+}
+.filds {
+    margin: 1.5em 0;
+}
+label {
+    display: block;
+    position: relative;
+    top: -20px;
+    left: 0px;
+    font-size: 16px;
+    z-index: 1;
+    transition: all 0.3s ease;
+    text-align: left;
+    color: #6c6c6c;
+}
+input {
+    border: none;
+    width: 100%;
+    height: 3em;
+    padding: 0 1em;
+    background: none;
+    border-bottom: 2px solid #6c6c6c;
+    z-index: 2;
+    font-weight: bold;
+    color: #b9595d;
+}
+input:focus, input:focus {
+    outline: none;
+    border-bottom: 2px solid #bf5864;
+}
+input:focus + label, input:not(:placeholder-shown) + label{
+    top: -60px;
+    font-size: .8em;
+    color: #3a6586;
+    text-transform: uppercase
+}
+input:placeholder-shown + label {
+    visibility: hidden; /*No mostrar el label si no hay datos solo placeholder*/
+}
+
+/* Control - BTN */
+.btn {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+input[type=submit] {
+    height: 5em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    color: white;
+}
+
+.success {
+    background: #51b56c;
+}
+.primary {
+    margin-top: 2em;
+    background: #0c614a;
+}
+.danger {
+    background: #e53f47;
+}
+.edit {
+    background: url(https://img.icons8.com/ios/50/000000/edit-row.png) no-repeat 0 0;
+    /* white-space: nowrap; */
+    /* overflow: hidden; */
+    text-indent: -9999px;
+    background-position: center;
+    background-size: 3em;
+}
+.delete {
+    background: url(https://img.icons8.com/ios/50/000000/clear-symbol.png) no-repeat 0 0;
+    text-indent: -9999px;
+    background-position: center;
+    background-size: 3em;
+}
+
+input[type=submit].edit, input[type=submit].delete {
+    /*height: 2em; clear.svg*/ 
+    background-color: #e8e7ec;
+    border-radius: 10px;
+}
+/* RadioGroup */
+.check {
+    display: grid;
+    grid-template-columns: 6fr 1fr;
+    margin: 5px 3em;
+    border: 1px solid #b3b3b3;
+    border-radius: 5px;
+}
+.labelCheck {
+    position: unset; 
+    padding: .7em 1.5em;
+}
+input[type=radio]{
+    width: 2em;
+    height: 2em;
+    margin-top: .5em;
+    -webkit-appearance: none;
+    padding: 6px;
+    /* background-clip: content-box; */
+    border: 2px solid #bbbbbb;
+    background-color: #e7e6e7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+input[type=radio]:checked {
+    background-color: #51b56c;
+    background-clip: content-box; 
+    border: 2px solid #51b56c;
+}
+.key {
+    background: #e5e6f2;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    text-align: justify;
+    border-collapse: collapse;
+}
+thead {
+    text-align: center;
+    text-transform: capitalize;
+    background: none;
+    border-bottom: 1px solid #bf5864;
+    color: #404040;
+}
+th {
+    padding: 1em;
+}
+td {
+    padding: 10px;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+tbody {
+    word-break: break-all !important;
+    color: #4e4e4e;
+}
+td:hover {
+    width: 100%;/*auto;*/
+    white-space: initial;
+    overflow:visible;
+    cursor: pointer;
+}
+tr > td:last-of-type, tr > td:nth-last-child(-n+2)  {
+    width: 2em;
+}
+tbody > tr {
+    border-bottom: 1px solid #a4a7bb;
+}
+tr:nth-child(even) {
+    background: #e4e6f2; /*#bfc1cd;*/
+}
+tr:nth-child(even)  input[type=submit].edit, tr:nth-child(even)  input[type=submit].delete {
+    background-color: white;
+}
+
+
